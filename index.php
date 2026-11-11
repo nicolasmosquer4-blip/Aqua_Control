@@ -1,2 +1,12 @@
-<?php
-echo "Vamos a sacar el proyecto a delante";
+<?php require 'layout.php'; $d=db(); $tar=2800;
+$tot=$d->query("SELECT m3 FROM mensual WHERE mes='Jun'")->fetchColumn();$pi=$d->query("SELECT * FROM por_inst")->fetchAll();
+if(isset($_GET['csv'])){header('Content-Type:text/csv;charset=utf-8');header('Content-Disposition:attachment;filename=reporte.csv');$o=fopen('php://output','w');fputcsv($o,['Instalación','m3','Costo COP']);foreach($pi as $r)fputcsv($o,[$r['nombre'],$r['m3'],$r['m3']*$tar]);exit;}
+head('reportes','Reportes','Convierte tus datos en decisiones sostenibles.','<a class="btn" href="?csv=1">↓ Exportar Excel</a><a class="btn-p" href="javascript:print()">↓ Descargar PDF</a>'); ?>
+<div class="card"><form class="f" style="grid-template-columns:1fr 1fr 1.5fr 1.5fr;align-items:end"><label>Desde<input value="01/06/2026"></label><label>Hasta<input value="30/06/2026"></label><label>Instalación<select><option>Todas las instalaciones</option></select></label><button class="btn-p" type="button">Aplicar filtros</button></form></div>
+<div class="grid g4"><div class="card kpi"><small>Consumo del período</small><div class="n"><?=nf($tot)?> m³</div><small>48 instalaciones incluidas</small></div><div class="card kpi"><small>Agua ahorrada</small><div class="n">1.115 m³</div><small style="color:var(--ok)">↘ 8,2 % vs. mayo</small></div>
+<div class="card kpi"><small>Promedio por instalación</small><div class="n"><?=nf($tot/48)?> m³</div><small>Durante junio de 2026</small></div><div class="card kpi"><small>Costo estimado · COP</small><div class="n"><?=nf($tot*$tar)?></div><small>Tarifa de referencia: $<?=nf($tar)?> / m³</small></div></div>
+<div class="grid" style="grid-template-columns:1fr 1fr"><div class="card"><h3>Tendencia de consumo</h3><p>Contexto semestral · m³</p><?=line_chart($d->query("SELECT * FROM mensual")->fetchAll())?></div>
+<div class="card"><h3>Comparación de instalaciones</h3><p>Junio de 2026 · m³</p><div style="display:flex;align-items:end;gap:18px;height:170px"><?php foreach($pi as $i=>$r)echo '<div style="flex:1;text-align:center;font-size:11px"><b>'.$r['m3'].'</b><div style="height:'.($r['m3']/3500*130).'px;background:'.($i?'#8fcbe8':'#2196d3').';border-radius:4px"></div>'.h(explode(' ',$r['nombre'])[1]??$r['nombre']).'</div>' ?></div></div></div>
+<div class="card"><h3>Resumen del período</h3><table><tr><th>Instalación</th><th>Consumo (m³)</th><th>Participación</th><th>Vs. mes anterior</th><th>Costo estimado (COP)</th></tr>
+<?php foreach($pi as $r): ?><tr><td><b><?=h($r['nombre'])?></b></td><td><?=nf($r['m3'])?></td><td><?=nf($r['m3']/$tot*100,1)?> %</td><td style="color:var(--ok)">↘ <?=nf(abs($r['var']),1)?> %</td><td>$<?=nf($r['m3']*$tar)?></td></tr><?php endforeach ?></table></div>
+<?php foot();
